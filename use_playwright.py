@@ -19,7 +19,7 @@ def extract_tables_playwright():
             html = table.inner_html()
             try:
                 df = pd.read_html(f"<table>{html}</table>")[0]
-                df.to_csv(f"playwright_table_{idx}.csv", index=False)
+                df.to_csv(f"playwright_folder/playwright_table_{idx}.csv", index=False)
                 print(f"✔ Saved playwright_table_{idx}.csv")
             except Exception as e:
                 print(f"⚠ Failed table {idx}: {e}")
