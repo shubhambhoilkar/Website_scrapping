@@ -83,6 +83,8 @@ def main():
 
     print(f"\n✅ Excel created: {OUTPUT_EXCEL}")
 
-
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("Try again with the program code.)
