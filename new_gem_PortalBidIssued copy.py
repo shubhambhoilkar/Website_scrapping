@@ -137,102 +137,28 @@ def extract_ra_result(page):
 
 /* ================= RA FINANCIAL EVALUATION ================= */
 
-const raFinancialEvaluationPanel = Array.from(
-  document.querySelectorAll('.panel.panel-default')
-).find(panel =>
-  panel.querySelector('.panel-heading a')
-    ?.innerText
-    ?.includes('FINANCIAL EVALUATION')
-);
+      const raFinPanel = Array.from(
+        document.querySelectorAll('.panel.panel-default')
+      ).find(panel =>
+        panel.querySelector('.panel-heading a')
+          ?.innerText?.includes('FINANCIAL EVALUATION')
+      );
 
-let raWinnerList = [];
-let financialEvaluationAvailable = true;
+      let financialEvaluation = { available: false, results: [] };
 
-if (!raFinancialEvaluationPanel) {
-  financialEvaluationAvailable = false;
-} else {
-  const raFinancialEvaluationPanelBody =
-    raFinancialEvaluationPanel.querySelector('.panel-body');
+      if (raFinPanel) {
+        financialEvaluation.available = true;
+      }
 
-  const raFinancialEvaluationTable =
-    raFinancialEvaluationPanelBody?.querySelector('table');
-
-  const raFinancialEvaluationTableBody =
-    raFinancialEvaluationTable?.querySelector('tbody');
-
-  if (raFinancialEvaluationTable && raFinancialEvaluationTableBody) {
-    const rows = raFinancialEvaluationTableBody.querySelectorAll('tr');
-
-    if (rows.length > 0) {
-      const colIndex = getColumnIndexMap(raFinancialEvaluationTable);
-
-      const getCell = (row, headerName) => {
-        const idx = colIndex[headerName.toLowerCase()];
-        return idx !== undefined ? row.querySelectorAll('td')[idx] : null;
-      };
-
-      raWinnerList = Array.from(rows).map(row => {
-        const rankCell = getCell(row, 'rank');
-
-        return {
-          serialNo:
-            getCell(row, 's.no.')?.innerText.trim() || null,
-
-          sellerName:
-            getCell(row, 'seller name')?.innerText.trim() || null,
-
-          offeredItem:
-            getCell(row, 'offered item')
-              ?.innerText.replace(/\s+/g, ' ')
-              .trim() || null,
-
-          offerSubmittedOn:
-            getCell(row, 'offer submitted on')?.innerText.trim() || null,
-
-          mseMiiLabels:
-            getCell(row, 'mse/mii status')
-              ? Array.from(
-                  getCell(row, 'mse/mii status').querySelectorAll('.label')
-                ).map(l => l.innerText.trim())
-              : [],
-
-          mseMiiInfo:
-            getCell(row, 'mse/mii status')
-              ? Array.from(
-                  getCell(row, 'mse/mii status').querySelectorAll('i.fa-info-circle')
-                )
-                  .map(i => i.title?.trim())
-                  .filter(Boolean)
-              : [],
-
-          totalPrice:
-            getCell(row, 'total price')?.innerText.trim() || null,
-
-          rank:
-            rankCell?.innerText.trim() || null,
-
-          isWinner:
-            rankCell?.querySelector('i.fa.fa-trophy')
-              ? 'Winner'
-              : 'NA',
-
-          qualificationStatus:
-            getCell(row, 'status')?.innerText.trim() || null
-        };
-      });
-    }
-  }
-        
       return {
         ra_No,
-        technicalEvaluation : raSellersList,
-        financialEvaluation : {
-          available : financialEvaluationAvailable,
-          results : raWinnerList
-        }
+        raDetails: raInfo,
+        technicalEvaluation,
+        financialEvaluation
       };
     }
     """)
+
     return ra_data
 
 
@@ -377,24 +303,26 @@ with sync_playwright() as p:
     }
     """)
       
-    for card in cards[:1]:
-        print(card)
-        raResultURL = card.get("raResultURL")
-        if not raResultURL:
-            continue
-        
-        print("Opening RA Result: ", raResultURL())
-        raResultPage = context.new_page()
-        try:
-            raResultPage.goto(raResultURL, wait_until = "domcontentloaded")
-            raResultPage.wait_for_selector('#content', timeout = 15000)
+for card in cards[:1]:
+    print(card)
 
-            raResultData = extract_ra_result(raResultPage)
-            print(raResultData)
-            
-            card['raResult'] = raResultData
-            print(cards)
-        finally:
-            raResultPage.close()
+    raResultURL = card.get("raResultURL")
+    if not raResultURL:
+        continue
 
-    page.close()
+    print("Opening RA Result:", raResultURL)
+
+    raResultPage = context.new_page()
+    try:
+        raResultPage.goto(raResultURL, wait_until="domcontentloaded")
+        raResultPage.wait_for_selector('#content', timeout=15000)
+
+        raResultData = extract_ra_result(raResultPage)
+        card['raResult'] = raResultData
+
+        print("RA Result extracted")
+
+    finally:
+        raResultPage.close()
+
+page.close()
